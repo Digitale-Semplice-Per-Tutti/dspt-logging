@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # The fleet runs on both: a 3.12-only regression would reach the
+        # applications that are still on 3.11.
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync --frozen --python ${{ matrix.python-version }}
+
+      - name: Lint
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Types
+        run: uv run mypy src
+
+      - name: Tests
+        run: uv run pytest
+
+      # The checker run against a real catalogue: a regression in it shows up
+      # here rather than in an application's CI.
+      - name: Event catalogue
+        run: uv run python -m dspt_logging.check examples
