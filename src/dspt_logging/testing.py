@@ -11,6 +11,7 @@ application knows what its own secrets look like.
 
 from __future__ import annotations
 
+import json
 import logging
 import traceback
 from collections.abc import Iterator, Sequence
@@ -18,7 +19,12 @@ from typing import Any
 
 import pytest
 
-from dspt_logging.config import _STANDARD_LOG_RECORD_ATTRS, FIXED_KEYS
+from dspt_logging.config import (
+    _STANDARD_LOG_RECORD_ATTRS,
+    FIXED_KEYS,
+    JsonFormatter,
+    _find_json_handler,
+)
 
 
 class _ListHandler(logging.Handler):
@@ -52,6 +58,56 @@ def log_records() -> Iterator[list[logging.LogRecord]]:
     root.setLevel(logging.DEBUG)
     try:
         yield records
+    finally:
+        root.removeHandler(handler)
+        root.setLevel(previous_level)
+
+
+class _LineHandler(logging.Handler):
+    """Render each record the way Fluent Bit will see it, as it arrives.
+
+    Rendered at emit time with whatever formatter the package's handler
+    carries at that moment, so a test that calls ``configure_logging`` (or
+    builds the real application, which does) sees the service and the tenant
+    that call set. Before any call, a neutral formatter stands in.
+    """
+
+    def __init__(self, lines: list[dict[str, Any]]) -> None:
+        super().__init__(level=logging.NOTSET)
+        self._lines = lines
+
+    def emit(self, record: logging.LogRecord) -> None:
+        formatter = self._current_formatter()
+        self._lines.append(json.loads(formatter.format(record)))
+
+    @staticmethod
+    def _current_formatter() -> logging.Formatter:
+        handler = _find_json_handler(logging.getLogger())
+        if handler is not None and handler.formatter is not None:
+            return handler.formatter
+        return JsonFormatter("test")
+
+
+@pytest.fixture
+def log_lines() -> Iterator[list[dict[str, Any]]]:
+    """Every line the root logger would have written, as the dict Fluent Bit
+    would parse: the fixed keys, the context, the fields, the rendered
+    ``message``.
+
+    For a smoke test through the real application (``tenant``, ``service``,
+    the access line's message), where :func:`log_records` shows only the
+    record's own attributes. The root level is lowered to DEBUG for the
+    duration; note that ``configure_logging`` sets it back to its own level
+    when called inside the test.
+    """
+    lines: list[dict[str, Any]] = []
+    handler = _LineHandler(lines)
+    root = logging.getLogger()
+    previous_level = root.level
+    root.addHandler(handler)
+    root.setLevel(logging.DEBUG)
+    try:
+        yield lines
     finally:
         root.removeHandler(handler)
         root.setLevel(previous_level)

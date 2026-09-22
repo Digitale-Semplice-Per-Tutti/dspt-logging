@@ -142,3 +142,22 @@ def test_every_platform_field_is_in_the_shared_vocabulary() -> None:
     application, so the checker must find it declared."""
     for event in (HTTP_ACCESS, API_UNHANDLED):
         assert event.fields <= set(SHARED_FIELDS)
+
+
+def test_log_event_accepts_the_exception_itself_as_exc_info(
+    log_records: list[logging.LogRecord],
+) -> None:
+    """A helper that receives the exception as an argument hands it over
+    directly, as `logging` allows, instead of re-raising to get a `True`."""
+    logger = logging.getLogger("test.events.exc")
+    caught: Exception | None = None
+    try:
+        raise ValueError("secret detail")
+    except ValueError as exc:
+        caught = exc
+
+    log_event(logger, FAILED, exc_info=caught, thing_id=1)
+
+    (record,) = [r for r in log_records if r.name == "test.events.exc"]
+    assert record.exc_info is not None
+    assert record.exc_info[0] is ValueError

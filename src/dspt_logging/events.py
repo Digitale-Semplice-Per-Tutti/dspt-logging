@@ -158,7 +158,7 @@ def log_event(
     event: Event,
     *,
     level: int | None = None,
-    exc_info: bool = False,
+    exc_info: bool | BaseException = False,
     **fields: Any,
 ) -> None:
     """Emit one line for ``event``.

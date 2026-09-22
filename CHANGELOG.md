@@ -4,6 +4,21 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e le
 versioni [SemVer](https://semver.org/lang/it/). Le applicazioni si appuntano a
 un tag, quindi ogni voce qui è una cosa che cambia quando qualcuno alza il tag.
 
+## [0.1.2] - 2026-09-22
+
+### Aggiunto
+- fixture pytest `log_lines`: le righe come le vedrebbe Fluent Bit (chiavi
+  fisse, contesto, campi, `message` reso), per lo smoke test attraverso
+  l'applicazione vera; `log_records` resta per asserire sui record.
+- `log_event(..., exc_info=exc)` accetta l'eccezione stessa, come `logging`:
+  un helper che la riceve come argomento non deve rilanciarla per passare
+  `True`.
+
+### Corretto
+- la regola 7 del controllo vede anche `Adapter(logger, ctx).error(...)`: il
+  ricevente della chiamata era una chiamata a sua volta e nessun controllo
+  guardava quella riga.
+
 ## [0.1.1] - 2026-09-22
 
 ### Aggiunto

@@ -301,7 +301,14 @@ def _unnamed_severe_lines(tree: ast.AST, path: str) -> list[Finding]:
             continue
         if node.func.attr not in _NAMED_LEVELS:
             continue
-        target = getattr(node.func.value, "id", None) or getattr(node.func.value, "attr", "")
+        receiver = node.func.value
+        # `Adapter(logger, ctx).error(...)`: the receiver is itself a call, and
+        # the name that says "this is a logger" is the one being called. One
+        # such ERROR line hid from every check for months because only names
+        # and attributes were looked at.
+        if isinstance(receiver, ast.Call):
+            receiver = receiver.func
+        target = getattr(receiver, "id", None) or getattr(receiver, "attr", "")
         if "log" not in str(target).lower():
             continue
         extra = [keyword for keyword in node.keywords if keyword.arg == "extra"]

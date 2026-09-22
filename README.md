@@ -20,7 +20,7 @@ Nel `pyproject.toml` dell'applicazione, appuntato a un tag:
 
 ```toml
 dependencies = [
-    "dspt-logging @ git+https://github.com/Digitale-Semplice-Per-Tutti/dspt-logging@v0.1.1",
+    "dspt-logging @ git+https://github.com/Digitale-Semplice-Per-Tutti/dspt-logging@v0.1.2",
 ]
 ```
 
@@ -197,6 +197,15 @@ def test_la_risposta_non_finisce_nel_log(log_records):
 
 `assert_no_secret` guarda il messaggio, tutti i campi strutturati e i frame
 dello stack: "tanto sta solo nel traceback" non è un'attenuante.
+
+Per lo smoke test attraverso l'applicazione vera c'è `log_lines`: le righe
+già renderizzate come dict (`service`, `tenant`, il contesto, il `message`
+reso dell'access log), cioè quello che Fluent Bit leggerà.
+
+Entrambe le fixture abbassano il root a DEBUG per la durata del test; una
+`configure_logging()` chiamata *dentro* il test (per esempio da
+`create_app()`) lo riporta al proprio livello, quindi una riga DEBUG emessa
+dopo quella chiamata non viene catturata.
 
 ## L'esempio
 

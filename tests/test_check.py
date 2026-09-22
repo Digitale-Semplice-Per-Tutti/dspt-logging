@@ -437,3 +437,24 @@ def test_the_packages_own_catalogue_does_not_duplicate_itself() -> None:
 
     root = Path(str(dspt_logging.__file__)).parent
     assert [problem for problem in check_catalogue([root]) if problem.rule == 2] == []
+
+
+def test_an_error_on_an_adapter_built_in_the_same_expression_is_seen(tmp_path: Path) -> None:
+    """`Adapter(logger, ctx).error(...)` is still an ERROR line: the call the
+    rule inspects is the outer one, and its receiver is a call, not a name.
+    One such line hid from every check for months."""
+    pkg = _pkg(
+        tmp_path,
+        "alpha",
+        service="""
+import logging
+from dspt_logging import MergingLoggerAdapter
+
+logger = logging.getLogger(__name__)
+
+def go(job_id):
+    MergingLoggerAdapter(logger, {"job_id": job_id}).error("Cancel failed")
+""",
+    )
+    (problem,) = check_catalogue([pkg])
+    assert problem.rule == 7

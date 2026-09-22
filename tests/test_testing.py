@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 import pytest
 
+from dspt_logging import bound, configure_logging
 from dspt_logging.testing import assert_no_secret
 
 
@@ -68,3 +70,22 @@ def test_a_secret_in_the_stack_is_caught(log_records: list[logging.LogRecord]) -
 def test_an_empty_secret_is_a_mistake(log_records: list[logging.LogRecord]) -> None:
     with pytest.raises(ValueError):
         assert_no_secret(log_records, "")
+
+
+def test_log_lines_gives_the_rendered_line_with_the_formatters_keys(
+    log_lines: list[dict[str, Any]],
+) -> None:
+    """A smoke test wants what Fluent Bit will see: `tenant`, `service`, the
+    rendered access `message`, the context. Those keys exist only after the
+    formatter ran, so the fixture renders each record as it arrives."""
+    configure_logging("example-backend", tenant="tenant-a")
+
+    with bound(request_id="req-1"):
+        logging.getLogger("test.lines").info("Hello", extra={"event": "thing.item.sent"})
+
+    (line,) = [line for line in log_lines if line["logger"] == "test.lines"]
+    assert line["service"] == "example-backend"
+    assert line["tenant"] == "tenant-a"
+    assert line["event"] == "thing.item.sent"
+    assert line["request_id"] == "req-1"
+    assert line["message"] == "Hello"
