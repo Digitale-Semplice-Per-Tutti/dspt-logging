@@ -235,11 +235,16 @@ def _handwritten(tree: ast.AST, path: str) -> list[Finding]:
     for node in ast.walk(tree):
         if isinstance(node, ast.Dict):
             for key, value in zip(node.keys, node.values, strict=False):
+                # Position decides, shape only excludes what could not be a
+                # name at all: three applications stream chat as
+                # `{"event": "token", "data": ...}`, and a frame kind has no
+                # dots because rule 4 leaves none for it to have.
                 if (
                     isinstance(key, ast.Constant)
                     and key.value == "event"
                     and isinstance(value, ast.Constant)
                     and isinstance(value.value, str)
+                    and "." in value.value
                 ):
                     out.append(
                         Finding(

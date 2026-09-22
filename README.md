@@ -20,7 +20,7 @@ Nel `pyproject.toml` dell'applicazione, appuntato a un tag:
 
 ```toml
 dependencies = [
-    "dspt-logging @ git+https://github.com/Digitale-Semplice-Per-Tutti/dspt-logging@v0.1.2",
+    "dspt-logging @ git+https://github.com/Digitale-Semplice-Per-Tutti/dspt-logging@v0.1.3",
 ]
 ```
 
@@ -169,7 +169,8 @@ Legge il sorgente (AST, non runtime), quindi vede anche la riga di log nel ramo
 `except` che nessun test esercita. Esce con 1 e stampa `file:riga [regola N]`
 per ogni problema. Le sette regole:
 
-1. nessun nome evento scritto a mano fuori dal catalogo;
+1. nessun nome evento scritto a mano fuori dal catalogo (una stringa senza
+   punti, come il tipo di un frame SSE, non e' un nome e non conta);
 2. nessun nome dichiarato due volte (i cinque del pacchetto compresi);
 3. un campo usato da eventi di più pacchetti deve stare in `SHARED_FIELDS`;
 4. forma del nome: `domain.object.action`, minuscolo, almeno due segmenti;

@@ -458,3 +458,28 @@ def go(job_id):
     )
     (problem,) = check_catalogue([pkg])
     assert problem.rule == 7
+
+
+def test_a_server_sent_events_frame_is_not_an_event_name(tmp_path: Path) -> None:
+    """Three applications stream chat as `{"event": "token", "data": ...}`.
+    The key is the same word, the thing is not: a frame kind is the
+    frontend's contract and has no dots, and rule 4 says a name without
+    dots could never be an event. Position still decides, shape only
+    excludes what could not possibly be one."""
+    pkg = _pkg(
+        tmp_path,
+        "alpha",
+        stream="""
+def frame(chunk):
+    return {"event": "token", "data": {"text": chunk}}
+
+def done():
+    return {"event": "done"}
+
+def bad():
+    return {"event": "alpha.item.sent"}
+""",
+    )
+    problems = check_catalogue([pkg])
+    assert [p.rule for p in problems] == [1]
+    assert "alpha.item.sent" in problems[0].message

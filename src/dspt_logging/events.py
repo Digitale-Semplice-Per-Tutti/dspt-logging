@@ -188,6 +188,9 @@ def log_event(
         event.message,
         extra={"event": event.name, **fields},
         exc_info=exc_info,
+        # The line's `lineno` and `funcName` point at the caller, not here:
+        # pytest's captured-log view is where a failure is first read.
+        stacklevel=2,
     )
 
 

@@ -4,6 +4,16 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e le
 versioni [SemVer](https://semver.org/lang/it/). Le applicazioni si appuntano a
 un tag, quindi ogni voce qui è una cosa che cambia quando qualcuno alza il tag.
 
+## [0.1.3] - 2026-09-22
+
+### Corretto
+- la regola 1 del controllo non scambia piu' un frame Server-Sent Events
+  (`{"event": "token", "data": ...}`) per un nome di evento scritto a mano:
+  un nome ha almeno un punto, un tipo di frame mai. Tre applicazioni
+  aggiravano il controllo con un helper.
+- `log_event` passa `stacklevel=2`: `lineno` e `funcName` del record
+  indicano il chiamante, non il pacchetto, dove pytest mostra i log catturati.
+
 ## [0.1.2] - 2026-09-22
 
 ### Aggiunto
