@@ -204,6 +204,22 @@ async def test_a_successful_probe_leaves_no_line(json_lines: Records) -> None:
     assert _access(json_lines()) == []
 
 
+async def test_a_self_probe_recognised_by_its_user_agent_leaves_no_line(
+    json_lines: Records,
+) -> None:
+    """An application that probes one of its own public routes (a webhook
+    handshake, every couple of minutes, per tenant) cannot name the route as a
+    probe: real callers use it too. It names itself in the user agent instead,
+    and those lines are silent whatever they answered."""
+    app = _app(silent_user_agents=("example-internal-probe",))
+
+    await _get(app, "/api/ping", headers={"User-Agent": "example-internal-probe/webhook"})
+    await _get(app, "/api/ping", headers={"User-Agent": "Mozilla/5.0"})
+
+    (line,) = _access(json_lines())
+    assert line["user_agent"] == "Mozilla/5.0"
+
+
 async def test_a_failing_probe_is_logged(json_lines: Records) -> None:
     """The rule is not "probes are quiet": a 200 says nothing, a 503 says
     everything."""

@@ -1,6 +1,6 @@
 [project]
 name = "dspt-logging"
-version = "0.1.0"
+version = "0.1.1"
 description = "The shared logging contract of the DSPT backends: one JSON line per record, one request context, one event catalogue checker."
 readme = "README.md"
 requires-python = ">=3.11"

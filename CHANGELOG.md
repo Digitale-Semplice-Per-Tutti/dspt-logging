@@ -4,6 +4,16 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e le
 versioni [SemVer](https://semver.org/lang/it/). Le applicazioni si appuntano a
 un tag, quindi ogni voce qui è una cosa che cambia quando qualcuno alza il tag.
 
+## [0.1.1] - 2026-09-22
+
+### Aggiunto
+- `install_request_logging(..., silent_user_agents=(...))`: nessuna riga di
+  accesso per le richieste il cui user agent inizia con uno dei prefissi dati,
+  qualunque sia la risposta. Serve a un'applicazione che sonda una propria
+  route pubblica (l'handshake del webhook WhatsApp, ogni due minuti per
+  tenant): non puo' dichiararla probe, perche' la usano anche i chiamanti veri,
+  e allora si firma nello user agent.
+
 ## [0.1.0] - 2026-09-22
 
 Prima versione: il contratto estratto dai due backend che lo avevano gia',

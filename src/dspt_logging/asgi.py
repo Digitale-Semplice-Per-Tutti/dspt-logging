@@ -188,11 +188,17 @@ class RequestContextMiddleware:
         probe_paths: Sequence[str] = DEFAULT_PROBE_PATHS,
         masked_params: Sequence[str] = DEFAULT_MASKED_PARAMS,
         quiet_404_outside: Sequence[str] | None = None,
+        silent_user_agents: Sequence[str] = (),
     ) -> None:
         self.app = app
         self.probe_paths = tuple(probe_paths)
         self.masked_params = tuple(masked_params)
         self.quiet_404_outside = tuple(quiet_404_outside) if quiet_404_outside else None
+        # An application that probes one of its own public routes (a webhook
+        # handshake, every couple of minutes, per tenant) cannot list the
+        # route as a probe: real callers use it too. It names itself in the
+        # user agent instead, and those lines are silent whatever the answer.
+        self.silent_user_agents = tuple(silent_user_agents)
 
     async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
         if scope.get("type") != "http":
@@ -246,6 +252,12 @@ class RequestContextMiddleware:
             return
         if status_code is not None and 200 <= status_code < 300 and self._is_probe(raw_path):
             return
+        if (
+            user_agent
+            and self.silent_user_agents
+            and user_agent.startswith(self.silent_user_agents)
+        ):
+            return
 
         fields: dict[str, Any] = dict(request_identity(scope))
         if caller_ip is not None:
@@ -287,6 +299,7 @@ def install_request_logging(
     probe_paths: Sequence[str] = DEFAULT_PROBE_PATHS,
     masked_params: Sequence[str] = DEFAULT_MASKED_PARAMS,
     quiet_404_outside: Sequence[str] | None = None,
+    silent_user_agents: Sequence[str] = (),
 ) -> None:
     """Mount :class:`RequestContextMiddleware` on an ASGI application.
 
@@ -306,4 +319,5 @@ def install_request_logging(
         probe_paths=tuple(probe_paths),
         masked_params=tuple(masked_params),
         quiet_404_outside=tuple(quiet_404_outside) if quiet_404_outside else None,
+        silent_user_agents=tuple(silent_user_agents),
     )

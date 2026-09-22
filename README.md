@@ -20,7 +20,7 @@ Nel `pyproject.toml` dell'applicazione, appuntato a un tag:
 
 ```toml
 dependencies = [
-    "dspt-logging @ git+https://github.com/Digitale-Semplice-Per-Tutti/dspt-logging@v0.1.0",
+    "dspt-logging @ git+https://github.com/Digitale-Semplice-Per-Tutti/dspt-logging@v0.1.1",
 ]
 ```
 
@@ -39,6 +39,14 @@ install_request_logging(app, quiet_404_outside=("/api", "/static"))
 
 E nell'entrypoint del server: `uvicorn ... --no-access-log` (la riga di accesso
 la scrive il middleware, che conosce durata, request id, IP e route).
+
+Le opzioni di `install_request_logging`: `probe_paths` (prefissi delle probe,
+silenziose quando rispondono 2xx), `masked_params` (nomi dei parametri di
+route da mascherare in `path`), `quiet_404_outside` (i 404 fuori da questi
+prefissi vanno a DEBUG: scanner), `silent_user_agents` (prefissi di user agent
+che non lasciano mai una riga: la probe interna di un'app verso una propria
+route pubblica, che non si può dichiarare probe perché la usano anche i
+chiamanti veri).
 
 Chi esegue Alembic nello stesso processo passa
 `fileConfig(..., disable_existing_loggers=False)`, altrimenti la
