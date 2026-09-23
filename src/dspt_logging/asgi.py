@@ -149,22 +149,31 @@ def _valid_ip(value: str | None) -> str | None:
 
 
 def client_ip(scope: Any) -> str | None:
-    """The caller's address: ``X-Forwarded-For``, then ``X-Real-IP``, then the socket.
+    """The caller's address: ``X-Real-IP``, then ``X-Forwarded-For``, then the socket.
 
-    The socket is never the citizen: behind a CDN and an ingress it is a load
-    balancer or another pod of ours. It is kept as the last resort because for
-    a forensic record a wrong-but-present address beats a null — anything that
-    makes a *decision* from the address (a rate limiter) must use the forwarded
-    value only.
+    ``X-Real-IP`` first because the fleet sits behind Bunny, which sends
+    ``X-Forwarded-For`` as "CDN address, user address": its first hop is an
+    edge server, not the citizen. The edge sets ``X-Real-IP`` to the client on
+    every request, ingress-nginx takes ``$remote_addr`` from it, and a frontend
+    that proxies to its backend passes it on. The applications' own resolvers
+    (the rate limiter, the audit row) read it first for the same reason, and
+    the access line must name the same address they do.
+
+    ``X-Forwarded-For`` stays as a fallback for a caller that sends only that,
+    and the socket as the last resort: behind a CDN and an ingress it is a
+    load balancer or another pod of ours, never the citizen, but for a
+    forensic record a wrong-but-present address beats a null — anything that
+    makes a *decision* from the address (a rate limiter) must use the
+    forwarded value only.
     """
+    candidate = _valid_ip(_header(scope, b"x-real-ip"))
+    if candidate:
+        return candidate
     forwarded = _header(scope, b"x-forwarded-for")
     if forwarded:
         candidate = _valid_ip(forwarded.split(",")[0].strip())
         if candidate:
             return candidate
-    candidate = _valid_ip(_header(scope, b"x-real-ip"))
-    if candidate:
-        return candidate
     peer = scope.get("client")
     return _valid_ip(peer[0]) if peer else None
 

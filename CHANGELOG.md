@@ -4,6 +4,16 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e le
 versioni [SemVer](https://semver.org/lang/it/). Le applicazioni si appuntano a
 un tag, quindi ogni voce qui è una cosa che cambia quando qualcuno alza il tag.
 
+## [0.1.4] - 2026-09-23
+
+### Corretto
+- `client_ip` della riga di accesso legge prima `X-Real-IP`, poi
+  `X-Forwarded-For`, poi il socket. Dietro Bunny `X-Forwarded-For` e'
+  "indirizzo CDN, indirizzo utente": il primo hop, quello che leggevamo, e'
+  un server edge, e la riga di accesso non combaciava con l'indirizzo che
+  l'app usa per il rate limit e per l'audit. Un'app che passa al backend
+  solo `X-Real-IP` (Astra) non vede differenze.
+
 ## [0.1.3] - 2026-09-22
 
 ### Corretto

@@ -131,20 +131,32 @@ def test_an_unprintable_request_id_is_refused() -> None:
     assert _incoming_request_id(scope) is None
 
 
-async def test_the_forwarded_address_wins_over_the_socket(json_lines: Records) -> None:
+async def test_x_real_ip_wins_over_x_forwarded_for(json_lines: Records) -> None:
+    """Bunny sends X-Forwarded-For as "CDN address, user address": its first
+    hop is an edge server, and X-Real-IP is the one that names the citizen."""
     await _get(
         _app(),
         "/api/ping",
-        headers={"X-Forwarded-For": "203.0.113.9, 198.51.100.1", "X-Real-IP": "198.51.100.7"},
+        headers={"X-Forwarded-For": "198.51.100.1, 203.0.113.9", "X-Real-IP": "203.0.113.9"},
     )
 
     assert _access(json_lines())[0]["client_ip"] == "203.0.113.9"
 
 
-async def test_x_real_ip_is_the_fallback(json_lines: Records) -> None:
-    await _get(_app(), "/api/ping", headers={"X-Real-IP": "198.51.100.7"})
+async def test_x_forwarded_for_is_the_fallback(json_lines: Records) -> None:
+    await _get(_app(), "/api/ping", headers={"X-Forwarded-For": "203.0.113.9, 198.51.100.1"})
 
-    assert _access(json_lines())[0]["client_ip"] == "198.51.100.7"
+    assert _access(json_lines())[0]["client_ip"] == "203.0.113.9"
+
+
+async def test_an_unusable_x_real_ip_falls_back_to_x_forwarded_for(json_lines: Records) -> None:
+    await _get(
+        _app(),
+        "/api/ping",
+        headers={"X-Real-IP": "not-an-address", "X-Forwarded-For": "203.0.113.9"},
+    )
+
+    assert _access(json_lines())[0]["client_ip"] == "203.0.113.9"
 
 
 async def test_the_user_agent_is_truncated(json_lines: Records) -> None:
