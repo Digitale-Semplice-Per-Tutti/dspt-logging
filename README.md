@@ -20,7 +20,7 @@ Nel `pyproject.toml` dell'applicazione, appuntato a un tag:
 
 ```toml
 dependencies = [
-    "dspt-logging @ git+https://github.com/Digitale-Semplice-Per-Tutti/dspt-logging@v0.1.3",
+    "dspt-logging @ git+https://github.com/Digitale-Semplice-Per-Tutti/dspt-logging@v0.1.4",
 ]
 ```
 

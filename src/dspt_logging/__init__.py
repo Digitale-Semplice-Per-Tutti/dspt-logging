@@ -38,7 +38,7 @@ from dspt_logging.events import (
     log_event,
 )
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 __all__ = [
     "API_UNHANDLED",
